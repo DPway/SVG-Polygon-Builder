@@ -1,0 +1,331 @@
+<!DOCTYPE HTML>
+<html lang="ru">
+<head>
+	<title>Create polygon</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<meta http-equiv="Cache-Control" content="public" />  <!-- public no-cache no-store -->
+	<meta name="author" content="METEO-IS." />
+	<meta name="description" content="Создание координат полигона" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<!-- <link rel="shortcut icon" type="image/x-icon" href="images/icon.png"> -->
+
+	<style>
+body{
+	margin: 0;
+	width: 100%;
+	min-width: 800px;
+}
+header{
+	position: fixed;
+	top: 0;
+	z-index: 100;
+	width: 100%;
+	min-width: 800px;
+	padding: 5px 0 10px 0;
+	background-color: #fff;
+}
+.content{
+	width: 90%;
+	margin:auto;
+}
+.control-group{
+	display: inline-block;
+	margin: 0 15px;
+}
+.control-group label{
+	display: inline-block;
+	margin-bottom: 3px;
+}
+main{
+	margin-top: 65px;
+}
+.canvas-wraper{
+	min-height: 500px;
+	display: flex;
+}
+#paternImage{
+	position: relative;
+	margin:auto;
+}
+#svgContainer{
+	position: absolute;
+	top: 0;
+	left: 0;
+	height: 100%;
+	width: 100%;
+}
+svg{
+	height: 100%;
+	width: 100%;
+}
+polygon{
+	opacity: 0.7;
+}
+textarea{
+	display: block;
+	width: 100%;
+	margin: 0 0 40px 0;
+}
+.not-active{
+	opacity: 0.5;
+}
+footer{
+	height: 80px;
+	text-align: right;
+}
+
+	</style>
+
+</head>
+
+<body>
+<header>
+	<div class="content">
+		<form class="control-group">
+			<label for="userfile"> Background image </label><br>
+	 		<input id="iFile" name="userfile" type="file" />
+		</form>
+		<form class="control-group">
+			<label for="favcolor"> Color </label><br>
+			<input id="pColor" name="favcolor" type="color" value="#ff0000" onchange="FChangeColor()">
+			<input id="pFill" type="checkbox" name="filprop" checked="checked" onchange="FChangeColor()">
+			<label for="filprop"> fill </label>
+		</form>
+		<div class="control-group">
+			<label> Zoom </label> <br>
+			<button onclick="FZoomOut()">-</button>
+			<button onclick="FZoomIn()">+</button>
+		</div>
+		<div class="control-group">
+			<label> Operations </label> <br>
+			<button onclick="FPrevOperation(this)">&lt;&lt;Prev</button>
+			<button onclick="FNextOperation(this)">Next&gt;&gt;</button>
+			<button onclick="FClearOperation(this)">Clear</button>
+		</div>
+	</div>
+</header>
+<nav>
+</nav>
+<main>
+	<div class="canvas-wraper content">
+		<div id="paternImage" onclick="FPath(this)" oncontextmenu="return false">
+			<img src="img/img1.jpg" width="100%" height="auto"/>
+			<div id="svgContainer" oncontextmenu="FDelPoint()">
+<svg viewBox="0 0 100 100" preserveAspectRatio="none">
+	<polygon points="10.5 83.3 21.6 52.4 31.4 83.8" style="fill: rgb(255,0,0); stroke: rgb(255,0,0); stroke-width: 0.3;"/>
+</svg>
+			</div>
+		</div>
+	</div>
+	<div class="content">
+		<p style="margin-bottom: 8px;">Copy or edit your path code here:</p>
+		<textarea id="resultHtml" rows=10 oninput="FChangeSvg(this)">
+		</textarea>
+		<h1>SVG polygon builder</h1>
+		<p>Draw path over images.</p>
+		<p>Builder make an SVG polygon in relative coordinates according to background image width and height. It is useful for highlighting parts of image, implemented in  responsible html page.</p>
+	</div>
+	
+</main>
+<footer>
+	<div class="content">
+		Denis Pishniak
+	</div>
+</footer>
+
+
+<script src="lib/jquery-3.2.1.min.js"></script>
+<script type="text/javascript">
+
+// Choise background image 
+$('#iFile').change( function(event) {
+    var tmppath = URL.createObjectURL(event.target.files[0]);
+    $("img").fadeIn("fast").attr('src',URL.createObjectURL(event.target.files[0]));
+
+    // $("#disp_tmp_path").html("Temporary Path(Copy it and try pasting it in browser address bar) --> <strong>["+tmppath+"]</strong>");
+});
+
+
+var count = 2;
+var archive = ['<svg viewBox="0 0 100 100" preserveAspectRatio="none">\n	<polygon points="" style="fill: rgb(255,0,0); stroke: rgb(255,0,0); stroke-width: 0.3;"></polygon>\n</svg>'];
+
+
+window.onload = function() {FShowResult();}
+
+
+function FPath(el) {
+	var maxX = el.clientWidth;       // Get the canvas size
+	var maxY = el.clientHeight;
+	var cx = event.clientX;          // Get the cursor coordinates
+	var cy = event.clientY; 
+
+	var rect = el.getBoundingClientRect();		// позиция на экране
+	var py = rect.top;							// по вертикали от верхнего края
+	var px = rect.left;	
+
+	var ry = cy - py;				// Coordinates relate to parent
+	var rx = cx - px;
+
+	var rry = Math.round(ry / maxY * 1000) / 10;				// Coordinates relate to parent
+	var rrx = Math.round(rx / maxX * 1000) / 10;	
+
+	var svgRoot = el.getElementsByTagName('svg')[0];
+	var polel = el.getElementsByTagName('polygon')[0];
+	var clist = polel.points;
+	var point = svgRoot.createSVGPoint();
+	point.x = rrx;
+	point.y = rry;
+
+	polel.points.appendItem(point);
+
+	FShowResult();
+}
+
+function FDelPoint() {
+	var el = document.getElementById('paternImage');
+	var polel = el.getElementsByTagName('polygon')[0];
+	var clist = polel.points;
+	var Np = clist.length;
+	polel.points.removeItem(Np-1);
+	FShowResult();
+}
+
+function FShowResult() {
+	var el = document.getElementById('paternImage');
+	var svgRoot = el.getElementsByTagName('svg')[0]
+	var answ = '<svg viewBox="0 0 100 100" preserveAspectRatio="none">';
+	answ += svgRoot.innerHTML;
+	answ += '</svg>';
+
+	// var pretxt = svgRoot.innerHTML;
+	// var textArray = pretxt.split("<");
+	// var answ = '<code><</code><code>svg viewBox="0 0 100 100" preserveAspectRatio="none"</code><code>>';
+	// for (var i = 0; i < textArray.length; i++) {
+	// 	answ += '<code><</code>' + textArray[i]
+	// }
+	// answ += '<</code><code>/svg</code><code>></code>'
+	document.getElementById('resultHtml').innerHTML = answ;
+
+	FArchiveOperations(ansv);
+}
+
+
+function FChangeSvg(el) {
+	var answ = el.value;
+	answ = answ.replace(new RegExp("&lt;",'g'),"<");
+	answ = answ.replace(new RegExp("&gt;",'g'),">");
+	document.getElementById('svgContainer').innerHTML = answ;
+	
+	FArchiveOperations(ansv);
+}
+
+
+function FArchiveOperations(ansv) {
+	if (count == archive.length) {
+		archive.push(answ);
+		count = archive.length;
+	}else {
+		var dt = archive.length - count;
+		for (var i = 0; i < dt; i++) {
+			archive.pop();
+		}
+		archive.push(answ);
+		count = archive.length;
+	}
+}
+
+
+function FChangeColor(){
+	var el = document.getElementsByTagName('polygon')[0];
+	var colr = document.getElementById('pColor').value;
+	var filEl= document.getElementById('pFill');
+	if (filEl.checked == true) {
+		el.style.fill = colr;
+		el.style.stroke = colr;
+	}else {
+		el.style.fill = 'none';
+		el.style.stroke = colr;
+	}	
+}
+
+
+function FPrevOperation(el) {
+	var Na = archive.length;
+	count -= 1;
+	if (count > 1) {
+		var incount = count - 1;
+		var t = archive[incount];
+		document.getElementById('svgContainer').innerHTML = t;
+		document.getElementById('resultHtml').innerHTML = t;
+		el.classList.remove('not-active');
+		el.nextElementSibling.classList.remove('not-active');
+	}else if (count == 1) {
+		var incount = count - 1;
+		var t = archive[incount];
+		document.getElementById('svgContainer').innerHTML = t;
+		document.getElementById('resultHtml').innerHTML = t;
+		el.classList.add('not-active');
+		el.nextElementSibling.classList.remove('not-active');
+	}else {
+		count = 1;
+		el.classList.add('not-active');
+	}
+}
+
+function FNextOperation(el) {
+	var Na = archive.length;
+	count += 1;
+	if (count < Na) {
+		var incount = count - 1;
+		var t = archive[incount];
+		document.getElementById('svgContainer').innerHTML = t;
+		document.getElementById('resultHtml').innerHTML = t;
+		el.classList.remove('not-active');
+		el.previousElementSibling.classList.remove('not-active');
+
+	}else if (count == Na) {
+		var incount = count - 1;
+		var t = archive[incount];
+		document.getElementById('svgContainer').innerHTML = t;
+		document.getElementById('resultHtml').innerHTML = t;
+		el.classList.add('not-active');
+		el.previousElementSibling.classList.remove('not-active');
+	}else {
+		count = Na;
+		el.classList.add('not-active');
+	}
+}
+
+function FClearOperation(){
+	var el = document.getElementById('paternImage');
+	var polel = el.getElementsByTagName('polygon')[0];
+	var clist = polel.points;
+	var Np = clist.length;
+	for (var p = Np-1; p >=0; p--) {
+		polel.points.removeItem(p);
+	}
+	FShowResult();
+}
+
+
+function FZoomOut() {
+	var el = document.getElementById('paternImage');
+	var oWidth = el.clientWidth;
+	var nWidth = Math.round(oWidth / 1.1);
+	el.style.width = nWidth + 'px';
+}
+
+function FZoomIn() {
+	var el = document.getElementById('paternImage');
+	var oWidth = el.clientWidth;
+	var nWidth = Math.round(oWidth * 1.1);
+	el.style.width = nWidth + 'px';
+}
+
+
+</script>
+
+
+
+</body>
+</html>
