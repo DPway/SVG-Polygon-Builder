@@ -87,6 +87,7 @@ footer{
 		<form class="control-group">
 			<label for="userfile"> Background image </label><br>
 	 		<input id="iFile" name="userfile" type="file" />
+	 		<div id="disp_tmp_path"></div>
 		</form>
 		<form class="control-group">
 			<label for="favcolor"> Color </label><br>
@@ -139,7 +140,6 @@ footer{
 </footer>
 
 
-<script src="lib/jquery-3.2.1.min.js"></script>
 <script type="text/javascript">
 
 // Global variables
@@ -151,10 +151,25 @@ window.onload = function() {FShowResult();}
 
 
 // Choise background image 
-$('#iFile').change( function(event) {
-    var tmppath = URL.createObjectURL(event.target.files[0]);
-    $("img").fadeIn("fast").attr('src',URL.createObjectURL(event.target.files[0]));
-});
+function FFileSelect(evt) {
+	var file = evt.target.files; 		// FileList object
+	var f = file[0];
+	
+	if (!f.type.match('image.*')) {		// Only process image files.
+		alert("Image only please....");
+	}
+	var reader = new FileReader();
+	// Closure to capture the file information.
+	reader.onload = (function(theFile) {
+		return function(e) {
+			var el = document.getElementById('paternImage');
+			var imel = el.getElementsByTagName('img')[0];
+			imel.src= e.target.result; 
+		};
+	})(f);
+	reader.readAsDataURL(f);   // Read in the image file as a data URL.
+}
+document.getElementById('iFile').addEventListener('change', handleFileSelect, false);
 
 
 function FAddPoint(el) {
