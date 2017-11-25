@@ -169,7 +169,7 @@ function FFileSelect(evt) {
 	})(f);
 	reader.readAsDataURL(f);   // Read in the image file as a data URL.
 }
-document.getElementById('iFile').addEventListener('change', handleFileSelect, false);
+document.getElementById('iFile').addEventListener('change', FFileSelect, false);
 
 
 function FAddPoint(el) {
