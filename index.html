@@ -1,13 +1,14 @@
 <!DOCTYPE HTML>
 <html lang="ru">
 <head>
-	<title>Create polygon</title>
+	<title>Polygon Builder</title>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 	<meta http-equiv="Cache-Control" content="public" />  <!-- public no-cache no-store -->
 	<meta name="author" content="Denis Pishniak" />
-	<meta name="description" content="Создание координат полигона" />
+	<meta name="description" content="Draw SVG polygon over image" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<!-- <link rel="shortcut icon" type="image/x-icon" href="images/icon.png"> -->
+	<link rel="shortcut icon" type="image/x-icon" href="../../../images/ico1.ico">
+
 
 	<style>
 body{
@@ -26,6 +27,7 @@ header{
 }
 .content{
 	width: 90%;
+	max-width: 1200px;
 	margin:auto;
 }
 .control-group{
@@ -41,7 +43,6 @@ main{
 }
 .canvas-wraper{
 	min-height: 500px;
-	display: flex;
 }
 #paternImage{
 	position: relative;
@@ -53,24 +54,26 @@ main{
 	left: 0;
 	height: 100%;
 	width: 100%;
+	padding-right: 5%;  /*for zoom case*/
 }
 svg{
 	height: 100%;
 	width: 100%;
+	cursor: copy;
 }
 polygon{
 	opacity: 0.7;
 }
 textarea{
 	display: block;
-	width: 100%;
+	width: 99.5%;
 	margin: 0 0 40px 0;
 }
 .not-active{
 	opacity: 0.5;
 }
 footer{
-	height: 80px;
+	padding: 40px 0 10px 0;
 	text-align: right;
 }
 
@@ -108,7 +111,7 @@ footer{
 </nav>
 <main>
 	<div class="canvas-wraper content">
-		<div id="paternImage" onclick="FPath(this)" oncontextmenu="return false">
+		<div id="paternImage" onclick="FAddPoint(this)" oncontextmenu="return false">
 			<img src="img/img1.jpg" width="100%" height="auto"/>
 			<div id="svgContainer" oncontextmenu="FDelPoint()">
 <svg viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -121,15 +124,17 @@ footer{
 		<p style="margin-bottom: 8px;">Copy or edit your path code here:</p>
 		<textarea id="resultHtml" rows=10 oninput="FChangeSvg(this)">
 		</textarea>
-		<h1>SVG polygon builder</h1>
-		<p>Draw path over images.</p>
-		<p>Builder make an SVG polygon in relative coordinates according to background image width and height. It is useful for highlighting parts of image, implemented in  responsible html page.</p>
+		<h1>SVG Polygon Builder</h1>
+		<p>Draw path over image.</p>
+		<p>The Builder make an SVG polygon in relative coordinates according to background image width and height. It is useful for purposes of highlight parts of image, that need to be implemented in responsive html page.</p>
+		<p><img src="https://github.com/fluidicon.png" width="20px" height="auto" style="display: inline; vertical-align: middle;
+    padding: 0 5px 5px 0;">See <a href="https://github.com/DPway/SVG-Polygon-Builder"> project folder</a> on GitHub.</p>
 	</div>
 	
 </main>
 <footer>
 	<div class="content">
-		Denis Pishniak
+		METEO-IS. Denis Pishniak
 	</div>
 </footer>
 
@@ -137,15 +142,7 @@ footer{
 <script src="lib/jquery-3.2.1.min.js"></script>
 <script type="text/javascript">
 
-// Choise background image 
-$('#iFile').change( function(event) {
-    var tmppath = URL.createObjectURL(event.target.files[0]);
-    $("img").fadeIn("fast").attr('src',URL.createObjectURL(event.target.files[0]));
-
-    // $("#disp_tmp_path").html("Temporary Path(Copy it and try pasting it in browser address bar) --> <strong>["+tmppath+"]</strong>");
-});
-
-
+// Global variables
 var count = 2;
 var archive = ['<svg viewBox="0 0 100 100" preserveAspectRatio="none">\n	<polygon points="" style="fill: rgb(255,0,0); stroke: rgb(255,0,0); stroke-width: 0.3;"></polygon>\n</svg>'];
 
@@ -153,20 +150,27 @@ var archive = ['<svg viewBox="0 0 100 100" preserveAspectRatio="none">\n	<polygo
 window.onload = function() {FShowResult();}
 
 
-function FPath(el) {
-	var maxX = el.clientWidth;       // Get the canvas size
+// Choise background image 
+$('#iFile').change( function(event) {
+    var tmppath = URL.createObjectURL(event.target.files[0]);
+    $("img").fadeIn("fast").attr('src',URL.createObjectURL(event.target.files[0]));
+});
+
+
+function FAddPoint(el) {
+	var maxX = el.clientWidth;                    // Get the canvas size
 	var maxY = el.clientHeight;
-	var cx = event.clientX;          // Get the cursor coordinates
+	var cx = event.clientX;                       // Get the cursor coordinates
 	var cy = event.clientY; 
 
-	var rect = el.getBoundingClientRect();		// позиция на экране
-	var py = rect.top;							// по вертикали от верхнего края
+	var rect = el.getBoundingClientRect();        // position on the screen
+	var py = rect.top;                            // from top edge
 	var px = rect.left;	
 
-	var ry = cy - py;				// Coordinates relate to parent
+	var ry = cy - py;                             // Coordinates relate to parent
 	var rx = cx - px;
 
-	var rry = Math.round(ry / maxY * 1000) / 10;				// Coordinates relate to parent
+	var rry = Math.round(ry / maxY * 1000) / 10;  // Coord. relate to parent and image size
 	var rrx = Math.round(rx / maxX * 1000) / 10;	
 
 	var svgRoot = el.getElementsByTagName('svg')[0];
@@ -190,6 +194,8 @@ function FDelPoint() {
 	FShowResult();
 }
 
+
+// Show SVG code
 function FShowResult() {
 	var el = document.getElementById('paternImage');
 	var svgRoot = el.getElementsByTagName('svg')[0]
@@ -206,32 +212,18 @@ function FShowResult() {
 	// answ += '<</code><code>/svg</code><code>></code>'
 	document.getElementById('resultHtml').innerHTML = answ;
 
-	FArchiveOperations(ansv);
+	FArchiveOperations(answ);
 }
 
 
+// Change SVG polygon on text input
 function FChangeSvg(el) {
 	var answ = el.value;
 	answ = answ.replace(new RegExp("&lt;",'g'),"<");
 	answ = answ.replace(new RegExp("&gt;",'g'),">");
 	document.getElementById('svgContainer').innerHTML = answ;
 	
-	FArchiveOperations(ansv);
-}
-
-
-function FArchiveOperations(ansv) {
-	if (count == archive.length) {
-		archive.push(answ);
-		count = archive.length;
-	}else {
-		var dt = archive.length - count;
-		for (var i = 0; i < dt; i++) {
-			archive.pop();
-		}
-		archive.push(answ);
-		count = archive.length;
-	}
+	FArchiveOperations(answ);
 }
 
 
@@ -246,6 +238,43 @@ function FChangeColor(){
 		el.style.fill = 'none';
 		el.style.stroke = colr;
 	}	
+}
+
+
+function FZoomIn() {
+	var el = document.getElementById('paternImage');
+	var oWidth = el.clientWidth;
+	var nWidth = Math.round(oWidth * 1.1);
+	el.style.width = nWidth + 'px';
+	if (nWidth > el.parentNode.clientWidth) {
+		el.parentNode.style.display = 'block';
+	}
+}
+
+function FZoomOut() {
+	var el = document.getElementById('paternImage');
+	var oWidth = el.clientWidth;
+	var nWidth = Math.round(oWidth / 1.1);
+	el.style.width = nWidth + 'px';
+	if (nWidth < el.parentNode.clientWidth) {
+		el.parentNode.style.display = 'flex';
+	}
+}
+
+
+// Archive of polygon changes
+function FArchiveOperations(answ) {
+	if (count == archive.length) {
+		archive.push(answ);
+		count = archive.length;
+	}else {
+		var dt = archive.length - count;
+		for (var i = 0; i < dt; i++) {
+			archive.pop();
+		}
+		archive.push(answ);
+		count = archive.length;
+	}
 }
 
 
@@ -308,24 +337,7 @@ function FClearOperation(){
 }
 
 
-function FZoomOut() {
-	var el = document.getElementById('paternImage');
-	var oWidth = el.clientWidth;
-	var nWidth = Math.round(oWidth / 1.1);
-	el.style.width = nWidth + 'px';
-}
-
-function FZoomIn() {
-	var el = document.getElementById('paternImage');
-	var oWidth = el.clientWidth;
-	var nWidth = Math.round(oWidth * 1.1);
-	el.style.width = nWidth + 'px';
-}
-
-
 </script>
-
-
 
 </body>
 </html>
